@@ -1,0 +1,5 @@
+prefixes:
+  simple_dns_server: ..
+packages:
+  ..:
+    path: ..
