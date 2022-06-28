@@ -33,49 +33,52 @@ class SimpleDns:
   */
   lookup query/ByteArray -> ByteArray?:
     exception := catch --trace:
-      if query.size < 4:
-        print "size only $query.size"
-        return null  // Not enough data to construct an error packet.
+      if query.size < 4: return null  // Not enough data to construct an error packet.
       query_id := BIG_ENDIAN.uint16 query 0
       response := ResponseBuilder_ query_id --recursion=(query[2] & 1 != 0)
 
-      if query.size < 12:
-        print "too small $query.size"
-        return response.create_error_ dns.FORMAT_ERROR
+      if query.size < 12: return response.create_error_ dns.FORMAT_ERROR
 
       // Check for expected query, but mask out the recursion desired bit.
-      if query[2] & ~1 != 0x00:
-        print "query[2] = $(%02x query[2])"
-        return response.create_error_ dns.FORMAT_ERROR
+      if query[2] & ~1 != 0x00: return response.create_error_ dns.FORMAT_ERROR
       error := query[3] & 0xf
-      if error != 0:
-        print "Error is $error"
-        return response.create_error_ dns.FORMAT_ERROR
+      if error != 0: return null  // Don't respond to errors.
       queries := BIG_ENDIAN.uint16 query 4
       answers := BIG_ENDIAN.uint16 query 6
       name_servers := BIG_ENDIAN.uint16 query 8
       additional := BIG_ENDIAN.uint16 query 10
       if answers != 0 or name_servers != 0:
-        print "answers=$answers name_servers=$name_servers"
         return response.create_error_ dns.FORMAT_ERROR
       position := 12
 
+      // Repeat the queries in the response packet.
+      queries.repeat:
+        q_name := dns.decode_name query position: position = it
+        q_type := BIG_ENDIAN.uint16 query position
+        q_class := BIG_ENDIAN.uint16 query position + 2
+        position += 4
+        if q_class == dns.INTERNET_CLASS and q_type == dns.A_RECORD:
+          response.resource_record q_name
+        else:
+          return response.create_error_ dns.NOT_IMPLEMENTED
+
+      // Reread the query packet.
+      position = 12
+
+      // Write the answers.
       queries.repeat:
         q_name := dns.decode_name query position: position = it
         q_type := BIG_ENDIAN.uint16 query position
         q_class := BIG_ENDIAN.uint16 query position + 2
         position += 4
 
-        if q_class == dns.INTERNET_CLASS and q_type == dns.A_RECORD:
-          print "Got query for $q_name"
-          if hosts_.contains q_name:
-            response.resource_record q_name --address=hosts_[q_name]
-          else if default:
-            response.resource_record q_name --address=default
-          else:
-            return response.create_error_ dns.NAME_ERROR
+        if hosts_.contains q_name:
+          response.resource_record q_name --address=hosts_[q_name]
+        else if default:
+          response.resource_record q_name --address=default
         else:
-          return response.create_error_ dns.NOT_IMPLEMENTED
+          return response.create_error_ dns.NAME_ERROR
+
       additional.repeat:
         a_name := dns.decode_name query position: position = it
         a_type := BIG_ENDIAN.uint16 query position
@@ -93,7 +96,8 @@ class ResponseBuilder_:
   substring_cache := {:}
   packet /Buffer := Buffer
   resource_records_ := 0
-  answer_count_offset_ := 0
+  static QUERY_COUNT_OFFSET_ ::= 4
+  static ANSWER_COUNT_OFFSET_ ::= 6
 
   constructor query_id/int --recursion/bool:
     packet.write_int16_big_endian query_id
@@ -105,7 +109,6 @@ class ResponseBuilder_:
     packet.write_byte bits_0
     packet.write_byte bits_1
     packet.write_int16_big_endian 0  // Query count.
-    answer_count_offset_ = packet.size
     packet.write_int16_big_endian 0  // Answer count.
     packet.write_int16_big_endian 0  // Name server count.
     packet.write_int16_big_endian 0  // Additional information count.
@@ -136,25 +139,28 @@ class ResponseBuilder_:
 
   resource_record -> none
       name/string
-      --address /net.IpAddress
+      --address /net.IpAddress? = null
       --r_type /int = dns.A_RECORD
       --r_class /int = dns.INTERNET_CLASS
       --ttl /int=30:
     write_domain_ name
     packet.write_int16_big_endian r_type
     packet.write_int16_big_endian r_class
-    packet.write_int32_big_endian ttl
-    packet.write_int16_big_endian 4  // Size of IP address
-    packet.write address.to_byte_array
-    resource_records_++
+    if address:
+      // In the query section we just repeat the query, but in the answer
+      // section we have the following extra fields.
+      packet.write_int32_big_endian ttl
+      packet.write_int16_big_endian 4  // Size of IP address
+      packet.write address.to_byte_array
+      resource_records_++
 
   get -> ByteArray:
     result := packet.bytes
-    BIG_ENDIAN.put_int16 result answer_count_offset_ resource_records_
+    BIG_ENDIAN.put_int16 result QUERY_COUNT_OFFSET_ resource_records_
+    BIG_ENDIAN.put_int16 result ANSWER_COUNT_OFFSET_ resource_records_
     return result
 
   create_error_ error_code/int -> ByteArray:
-    print "Create error $error_code"
     result := get
     result[3] |= error_code
     return result

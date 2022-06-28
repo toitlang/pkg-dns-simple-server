@@ -25,9 +25,11 @@ main:
       print "HTTP header: $line"
       if line == "": break
     try:
-      socket.write "Content-Type: text/plain\r"
-      socket.write "\r"
-      socket.write "Welcome to Toit! $(Time.now)\r"
+      socket.write "HTTP/1.1 200 OK\r\n"
+      socket.write "text/plain\r\n"
+      socket.write "Content-Type: text/plain\r\n"
+      socket.write "\r\n"
+      socket.write "Welcome to Toit! $(Time.now)\r\n"
     finally:
       socket.close
   server_socket.close
@@ -45,6 +47,6 @@ run_dns network/net.Interface:
     datagram /udp.Datagram := socket.receive
     response := hosts.lookup datagram.data
     if response:
-      print "Sending $my_ip to $datagram.address"
+      error := response[3] & 0xf
       socket.send
           udp.Datagram response datagram.address
