@@ -22,7 +22,7 @@ class SimpleDns:
   constructor .default=null:
 
   add_host name/string ip/net.IpAddress -> none:
-    hosts_[name] = ip
+    hosts_[to_lower_case_ name] = ip
 
   /**
   Takes a DNS query in the form of a UDP packet in RFC 1035 format, and
@@ -37,10 +37,10 @@ class SimpleDns:
       query_id := BIG_ENDIAN.uint16 query 0
       response := ResponseBuilder_ query_id --recursion=(query[2] & 1 != 0)
 
-      if query.size < 12: return response.create_error_ dns.FORMAT_ERROR
+      if query.size < 12: return response.create_error_ dns.ERROR_FORMAT
 
       // Check for expected query, but mask out the recursion desired bit.
-      if query[2] & ~1 != 0x00: return response.create_error_ dns.FORMAT_ERROR
+      if query[2] & ~1 != 0x00: return response.create_error_ dns.ERROR_FORMAT
       error := query[3] & 0xf
       if error != 0: return null  // Don't respond to errors.
       queries := BIG_ENDIAN.uint16 query 4
@@ -48,7 +48,7 @@ class SimpleDns:
       name_servers := BIG_ENDIAN.uint16 query 8
       additional := BIG_ENDIAN.uint16 query 10
       if answers != 0 or name_servers != 0:
-        return response.create_error_ dns.FORMAT_ERROR
+        return response.create_error_ dns.ERROR_FORMAT
       position := 12
 
       // Repeat the queries in the response packet.
@@ -57,10 +57,10 @@ class SimpleDns:
         q_type := BIG_ENDIAN.uint16 query position
         q_class := BIG_ENDIAN.uint16 query position + 2
         position += 4
-        if q_class == dns.INTERNET_CLASS and q_type == dns.A_RECORD:
+        if q_class == dns.CLASS_INTERNET and q_type == dns.RECORD_A:
           response.resource_record q_name
         else:
-          return response.create_error_ dns.NOT_IMPLEMENTED
+          return response.create_error_ dns.ERROR_NOT_IMPLEMENTED
 
       // Reread the query packet.
       position = 12
@@ -72,12 +72,20 @@ class SimpleDns:
         q_class := BIG_ENDIAN.uint16 query position + 2
         position += 4
 
-        if hosts_.contains q_name:
-          response.resource_record q_name --address=hosts_[q_name]
-        else if default:
-          response.resource_record q_name --address=default
-        else:
-          return response.create_error_ dns.NAME_ERROR
+        response.resource_record q_name
+            --address = hosts_.get q_name --if_absent=:
+              if hosts_.size != 0:
+                lower_case_name := to_lower_case_ q_name
+                hosts_.get lower_case_name --if_absent=:
+                  if default:
+                    default
+                  else:
+                    return response.create_error_ dns.ERROR_NAME
+              else:
+                if default:
+                  default
+                else:
+                  return response.create_error_ dns.ERROR_NAME
 
       additional.repeat:
         a_name := dns.decode_name query position: position = it
@@ -86,10 +94,14 @@ class SimpleDns:
         a_ttl := BIG_ENDIAN.uint32 query position + 4
         a_length := BIG_ENDIAN.uint16 query position + 8
         position += 10 + a_length
-        // Currently we don't do anything with the optional data.
+        // Currently we don't do anything with the additional data.
         // We might want to recognize type 41, which is OPT, and allows
         // the max UDP size of the sender to be recorded.  RFC 2671.
+
       return response.get
+
+    // If we caught and traced an exception we return null - no response is
+    // sent to the client.
     return null
 
 class ResponseBuilder_:
@@ -140,8 +152,8 @@ class ResponseBuilder_:
   resource_record -> none
       name/string
       --address /net.IpAddress? = null
-      --r_type /int = dns.A_RECORD
-      --r_class /int = dns.INTERNET_CLASS
+      --r_type /int = dns.RECORD_A
+      --r_class /int = dns.CLASS_INTERNET
       --ttl /int=30:
     write_domain_ name
     packet.write_int16_big_endian r_type
@@ -164,3 +176,13 @@ class ResponseBuilder_:
     result := get
     result[3] |= error_code
     return result
+
+to_lower_case_ in/string -> string:
+  in.do: | char |
+    if 'A' <= char <= 'Z':
+      byte_array := in.to_byte_array
+      byte_array.size.repeat:
+        if 'A' <= byte_array[it] <= 'Z':
+          byte_array[it] |= 0x20
+      return byte_array.to_string
+  return in

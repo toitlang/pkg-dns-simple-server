@@ -18,6 +18,8 @@ main:
   while true:
     socket := server_socket.accept
     if not socket: continue
+    // The worlds worst HTTP server - you certainly want to put something
+    // better here.
     print "Got a connection attempt on port 80 from $socket.peer_address"
     reader := BufferedReader socket
     while line := reader.read_line:
@@ -47,6 +49,5 @@ run_dns network/net.Interface:
     datagram /udp.Datagram := socket.receive
     response := hosts.lookup datagram.data
     if response:
-      error := response[3] & 0xf
       socket.send
           udp.Datagram response datagram.address
