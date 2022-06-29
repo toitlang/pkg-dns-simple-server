@@ -7,7 +7,7 @@ import net.wifi
 import net.udp
 import reader show BufferedReader
 
-import simple_dns_server show SimpleDns
+import dns_simple_server show SimpleDns
 
 main:
   network := wifi.establish --ssid="mywifi" --password="12345678"

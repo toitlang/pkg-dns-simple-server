@@ -1,4 +1,4 @@
-# Simple DNS Server
+# DNS Simple Server
 
 This is an extremely simple IPv4 DNS (name) server written in pure Toit that
 can have a static hosts table and a default answer.

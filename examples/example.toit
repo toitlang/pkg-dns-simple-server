@@ -6,7 +6,7 @@ import net
 import net.udp as net_udp
 import net.modules.udp
 
-import simple_dns_server show SimpleDns
+import dns_simple_server show SimpleDns
 
 main:
   socket := udp.Socket "0.0.0.0" 5353
