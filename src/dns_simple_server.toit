@@ -4,7 +4,6 @@
 
 import binary show BIG_ENDIAN
 import bytes show Buffer
-import net.modules.udp
 import net
 import net.modules.dns
 
@@ -15,8 +14,8 @@ There is a static map of domain names to IP addresses, and an
   optional default value that is returned for any other queries.
 It should be enough for a captive portal.
 */
-class SimpleDns:
-  hosts_ := {:}
+class SimpleDnsServer:
+  hosts_ ::= {:}
   default /net.IpAddress?
 
   constructor .default=null:
@@ -105,7 +104,7 @@ class SimpleDns:
     return null
 
 class ResponseBuilder_:
-  substring_cache := {:}
+  substring_cache_ ::= {:}
   packet /Buffer := Buffer
   resource_records_ := 0
   static QUERY_COUNT_OFFSET_ ::= 4
@@ -128,16 +127,16 @@ class ResponseBuilder_:
   write_domain_ name/string:
     while true:
       if name == ".": name = ""
-      if substring_cache.contains name:
+      if substring_cache_.contains name:
         // Point to name we already emitted once.
-        packet.write_int16_big_endian 0b1100_0000_0000_0000 | substring_cache[name]
+        packet.write_int16_big_endian 0b1100_0000_0000_0000 | substring_cache_[name]
         return
       else:
         if name == "":
           packet.write_byte 0
           return
         // Register the current position in the packet in the cache of suffixes.
-        substring_cache[name] = packet.size
+        substring_cache_[name] = packet.size
         dot := name.index_of "."
         if dot != -1:
           prefix := name[..dot]
@@ -150,7 +149,7 @@ class ResponseBuilder_:
           name = ""
 
   resource_record -> none
-      name/string
+      name /string
       --address /net.IpAddress? = null
       --r_type /int = dns.RECORD_A
       --r_class /int = dns.CLASS_INTERNET

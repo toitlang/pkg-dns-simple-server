@@ -3,21 +3,20 @@
 // be found in the EXAMPLES_LICENSE file.
 
 import net
-import net.udp as net_udp
-import net.modules.udp
+import net.udp
 
-import dns_simple_server show SimpleDns
+import dns_simple_server show SimpleDnsServer
 
 main:
-  socket := udp.Socket "0.0.0.0" 5353
+  socket := net.open.udp_open --port=5353
 
-  hosts := SimpleDns (net.IpAddress.parse "1.2.3.4")
+  hosts := SimpleDnsServer (net.IpAddress.parse "1.2.3.4")
   hosts.add_host "fives" (net.IpAddress.parse "5.5.5.5")
   hosts.add_host "sixes.com" (net.IpAddress.parse "6.6.6.6")
 
   while true:
-    datagram /net_udp.Datagram := socket.receive
+    datagram /udp.Datagram := socket.receive
     response := hosts.lookup datagram.data
     if response:
       socket.send
-          net_udp.Datagram response datagram.address
+          udp.Datagram response datagram.address

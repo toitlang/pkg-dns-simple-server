@@ -7,7 +7,7 @@ import net.wifi
 import net.udp
 import reader show BufferedReader
 
-import dns_simple_server show SimpleDns
+import dns_simple_server show SimpleDnsServer
 
 main:
   network := wifi.establish --ssid="mywifi" --password="12345678"
@@ -43,7 +43,7 @@ run_dns network/net.Interface:
 
   socket := network.udp_open --port=53
 
-  hosts := SimpleDns my_ip  // Answer my IP to all queries.
+  hosts := SimpleDnsServer my_ip  // Answer my IP to all queries.
 
   while true:
     datagram /udp.Datagram := socket.receive

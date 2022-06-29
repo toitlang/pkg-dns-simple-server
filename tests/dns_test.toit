@@ -6,7 +6,7 @@ import expect show *
 import net.modules.dns
 import net
 
-import dns_simple_server show SimpleDns
+import dns_simple_server show SimpleDnsServer
 
 main:
   test_lookup_failure
@@ -46,7 +46,7 @@ expect_lookup_success reply/ByteArray name/string id/int address/net.IpAddress -
   expect_equals address.raw reply[reply.size - 4..]
 
 test_lookup_failure:
-  no_default := SimpleDns
+  no_default := SimpleDnsServer
 
   query := dns.create_query "foo.com" 0x1234
 
@@ -60,7 +60,7 @@ test_default_lookup:
   ADDRESS ::= net.IpAddress.parse "192.168.3.4"
   ID ::= 0x1234
 
-  server := SimpleDns ADDRESS
+  server := SimpleDnsServer ADDRESS
 
   query := dns.create_query HOST ID
 
@@ -74,7 +74,7 @@ test_hosts_lookup:
   ID ::= 0x99fd
   ADDRESS ::= net.IpAddress.parse "10.45.44.43"
 
-  server := SimpleDns
+  server := SimpleDnsServer
   server.add_host HEST ADDRESS
 
   query := dns.create_query HEST ID
@@ -90,7 +90,7 @@ test_case_lookup:
   ID ::= 0x4200 + 103
   ADDRESS ::= net.IpAddress.parse "142.250.74.164"
 
-  server := SimpleDns
+  server := SimpleDnsServer
   server.add_host HoSt ADDRESS
 
   query := dns.create_query HOST ID
@@ -100,7 +100,7 @@ test_case_lookup:
 
   expect_lookup_success reply HOST ID ADDRESS
 
-  server = SimpleDns
+  server = SimpleDnsServer
   server.add_host HOST ADDRESS
 
   query = dns.create_query HoSt ID
