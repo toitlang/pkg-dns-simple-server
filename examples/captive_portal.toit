@@ -2,7 +2,7 @@
 // Use of this source code is governed by a Zero-Clause BSD license that can
 // be found in the EXAMPLES_LICENSE file.
 
-// An example of a soft-AP program that can run on the ESP32 generate a
+// An example of a soft-AP program that can run on the ESP32 to generate a
 // captive portal website that phones can connect to.  Uses techniques
 // similar to hotel WiFis to get the phone to pop up a page to interact
 // with an ESP32 that has no actual connectivity to the Internet.
