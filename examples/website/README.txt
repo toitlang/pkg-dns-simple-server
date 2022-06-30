@@ -11,5 +11,5 @@ allow the example server to insert dynamic content.
 Customize this behaviour in the `look_up_variable`
 function.
 
-The Wifi logo, wifi-svgrepo.com.svg is from
+The WiFi logo, wifi-svgrepo.com.svg is from
 https://www.svgrepo.com/svg/112855/wifi where it has a CC0 license.

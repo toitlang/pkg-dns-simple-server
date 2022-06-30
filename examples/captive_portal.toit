@@ -2,7 +2,7 @@
 // Use of this source code is governed by a Zero-Clause BSD license that can
 // be found in the EXAMPLES_LICENSE file.
 
-// An example of a soft-AP program that can run on the ESP32 to generate a
+// An example of a Soft AP program that can run on the ESP32 to generate a
 // captive portal website that phones can connect to.  Uses techniques
 // similar to hotel WiFis to get the phone to pop up a page to interact
 // with an ESP32 that has no actual connectivity to the Internet.
@@ -17,7 +17,7 @@ import dns_simple_server show SimpleDnsServer
 
 import .website.resources
 
-// Name of the wifi hotspot that the device advertizes.  You can
+// Name of the WiFi hotspot that the device advertizes.  You can
 // have a random name here to avoid clashes, eg.
 // "captive_portal_$(random 1_000_000_000)".
 CAPTIVE_PORTAL_SSID     ::= "mywifi"
