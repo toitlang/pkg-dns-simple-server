@@ -1,5 +1,10 @@
 prefixes:
   dns_simple_server: ..
+  http: pkg-http
 packages:
   ..:
     path: ..
+  pkg-http:
+    url: github.com/toitlang/pkg-http
+    version: 1.9.0
+    hash: 760f6c93e5b267e04fb687888dce159cc4050be2
