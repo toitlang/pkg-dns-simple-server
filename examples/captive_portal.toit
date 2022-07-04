@@ -50,6 +50,7 @@ MIME_TYPES ::= {
   "html": "text/html",
   "css":  "text/css",
   "png":  "image/png",
+  "webp": "image/webp",
   "pdf":  "application/pdf",
   "jpg":  "image/jpeg",
   "jpeg": "image/jpeg",
