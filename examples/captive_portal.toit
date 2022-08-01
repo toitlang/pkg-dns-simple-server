@@ -81,8 +81,6 @@ mime_type path/string -> string:
   suffix := path
   if suffix.ends_with ".gz":
     suffix = suffix[..suffix.size - 3]
-  else if suffix.ends_with ".br":
-    suffix = suffix[..suffix.size - 3]
   index := suffix.index_of --last "."
   if index != -1:
     suffix = suffix[index + 1..]
@@ -94,8 +92,6 @@ mime_type path/string -> string:
 compression_type path/string -> string?:
   if path.ends_with ".gz":
     return "gzip"
-  if path.ends_with ".br":
-    return "br"  // Brotli.
   return null
 
 to_lower_case in/string -> string:
