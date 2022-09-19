@@ -85,7 +85,7 @@ mime_type path/string -> string:
   if index != -1:
     suffix = suffix[index + 1..]
   return MIME_TYPES.get suffix --if_absent=:
-    suffix = to_lower_case suffix
+    suffix = suffix.to_ascii_lower
     return MIME_TYPES.get suffix --if_absent=:
       throw "Unknown MIME type for $path"
 
@@ -93,31 +93,6 @@ compression_type path/string -> string?:
   if path.ends_with ".gz":
     return "gzip"
   return null
-
-to_lower_case in/string -> string:
-  in.do:
-    if 'A' <= it <= 'Z':
-      ba := in.to_byte_array
-      ba.size.repeat:
-        if 'A' <= ba[it] <= 'Z':
-          ba[it] |= 0x20
-      return ba.to_string
-  return in
-
-substitute_variables result/string -> string:
-  parts := []
-  while result != "":
-    index := result.index_of "{{"
-    if index == -1:
-      parts.add result
-      break
-    parts.add result[..index]
-    substitution_size := result[index..].index_of "}}"
-    variable := result[index + 2..index + substitution_size].trim
-    result = result[index + substitution_size + 2..]
-    parts.add
-      look_up_variable variable
-  return parts.join ""
 
 handle request/http.Request writer/http.ResponseWriter -> none:
   path := request.path
@@ -134,8 +109,8 @@ handle request/http.Request writer/http.ResponseWriter -> none:
     writer.write_headers 404
     writer.write "Not found: $path"
     return
-  if result is string and (result.index_of "{{") != -1:
-    result = substitute_variables result
+  if result is string:
+    result = result.substitute: look_up_variable it
   writer.headers.set "Content-Type" (mime_type path)
   if compression_type path:
     writer.headers.set "Content-Encoding" (compression_type path)
