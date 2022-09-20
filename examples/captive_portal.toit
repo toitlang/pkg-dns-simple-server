@@ -97,6 +97,7 @@ compression_type path/string -> string?:
 handle request/http.Request writer/http.ResponseWriter -> none:
   path := request.path
   if path == "/": path = "index.html"
+  if path == "/hotspot-detect.html": path = "index.html"  // Needed for iPhones.
   if path.starts_with "/": path = path[1..]
 
   TEMPORARY_REDIRECTS.get path --if_present=:
