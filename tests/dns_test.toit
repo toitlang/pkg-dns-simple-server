@@ -48,12 +48,40 @@ expect_lookup_success reply/ByteArray name/string id/int address/net.IpAddress -
 test_lookup_failure:
   no_default := SimpleDnsServer
 
-  query := dns.create_query "foo.com" 0x1234
+  query := dns.create_query_ "foo.com" 0x1234
 
   // Look up a name that is not in the hosts table.
   reply := no_default.lookup query
 
   expect_lookup_failure reply "foo.com" 0x1234
+
+  // Now do a similar test with a DNS server that does not always respond with
+  // the default answer.
+  DEFAULT ::= net.IpAddress.parse "10.0.0.42"
+  ADDRESS ::= net.IpAddress.parse "192.168.0.2"
+  EXPLICIT_HOST ::= "www.zero.two.com"
+  has_default := SimpleDnsServer DEFAULT
+
+  has_default.remove_host "www.nonexistent.com"
+  has_default.add_host EXPLICIT_HOST ADDRESS
+  has_default.add_host "foo.com" ADDRESS
+  has_default.remove_host "foo.com"
+
+  query = dns.create_query_ "www.nonexistent.com" 0x123
+  reply = has_default.lookup query
+  expect_lookup_failure reply "www.nonexistent.com" 0x123
+
+  query = dns.create_query_ EXPLICIT_HOST 0x5552
+  reply = has_default.lookup query
+  expect_lookup_success reply EXPLICIT_HOST 0x5552 ADDRESS
+
+  query = dns.create_query_ "foo.com" 0x5553
+  reply = has_default.lookup query
+  expect_lookup_failure reply "foo.com" 0x5553
+
+  query = dns.create_query_ "anything.info" 0x5556
+  reply = has_default.lookup query
+  expect_lookup_success reply "anything.info" 0x5556 DEFAULT
 
 test_default_lookup:
   HOST ::= "foo.com"
@@ -62,7 +90,7 @@ test_default_lookup:
 
   server := SimpleDnsServer ADDRESS
 
-  query := dns.create_query HOST ID
+  query := dns.create_query_ HOST ID
 
   // Lookup a name that returns the default IP.
   reply := server.lookup query
@@ -77,7 +105,7 @@ test_hosts_lookup:
   server := SimpleDnsServer
   server.add_host HEST ADDRESS
 
-  query := dns.create_query HEST ID
+  query := dns.create_query_ HEST ID
 
   // Lookup a name that is in the hosts table.
   reply := server.lookup query
@@ -93,7 +121,7 @@ test_case_lookup:
   server := SimpleDnsServer
   server.add_host HoSt ADDRESS
 
-  query := dns.create_query HOST ID
+  query := dns.create_query_ HOST ID
 
   // Lookup a name that is in the hosts table, but in a different case.
   reply := server.lookup query
@@ -103,7 +131,7 @@ test_case_lookup:
   server = SimpleDnsServer
   server.add_host HOST ADDRESS
 
-  query = dns.create_query HoSt ID
+  query = dns.create_query_ HoSt ID
 
   // Lookup a name with the wrong case.
   reply = server.lookup query
