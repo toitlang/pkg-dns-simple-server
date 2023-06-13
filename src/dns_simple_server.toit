@@ -18,10 +18,27 @@ class SimpleDnsServer:
   hosts_ ::= {:}
   default /net.IpAddress?
 
+  /**
+  Creates a simple DNS server with a $lookup method.
+  The $default argument, if given, is an IP address that is returned
+    for all unknown domain names.
+  Known domain names can be added with $add_host.
+  Domain names that are not known, and where the default answer should not be
+    given, can be set with $remove_host.
+  */
   constructor .default=null:
 
+  /// Adds a mapping from hostname to IP address.
   add_host name/string ip/net.IpAddress -> none:
     hosts_[to_lower_case_ name] = ip
+
+  /**
+  Removes a mapping from hostname to IP address.
+  The given name will cause an error response to a DNS query, even if a
+    default answer was given in the constructor.
+  */
+  remove_host name/string -> none:
+    hosts_[to_lower_case_ name] = null
 
   /**
   Takes a DNS query in the form of a UDP packet in RFC 1035 format, and
@@ -71,20 +88,17 @@ class SimpleDnsServer:
         q_class := BIG_ENDIAN.uint16 query position + 2
         position += 4
 
-        response.resource_record q_name
-            --address = hosts_.get q_name --if_absent=:
-              if hosts_.size != 0:
-                lower_case_name := to_lower_case_ q_name
-                hosts_.get lower_case_name --if_absent=:
-                  if default:
-                    default
-                  else:
-                    return response.create_error_ dns.ERROR_NAME
-              else:
-                if default:
-                  default
-                else:
-                  return response.create_error_ dns.ERROR_NAME
+        response_address := hosts_.get q_name --if_absent=:
+          if hosts_.size != 0:
+            lower_case_name := to_lower_case_ q_name
+            hosts_.get lower_case_name --if_absent=: default
+          else:
+            default
+
+        if response_address == null:
+          return response.create_error_ dns.ERROR_NAME
+
+        response.resource_record q_name --address=response_address
 
       additional.repeat:
         a_name := dns.decode_name query position: position = it
