@@ -8,7 +8,7 @@ files into the `resources.toit` file.
 
 In text-based formats you can use {{substitution}} to
 allow the example server to insert dynamic content.
-Customize this behaviour in the `look_up_variable`
+Customize this behaviour in the `look-up-variable`
 function.
 
 The WiFi logo, wifi-svgrepo.com.svg is from
