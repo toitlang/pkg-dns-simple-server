@@ -71,7 +71,7 @@ main:
     task:: run-dns network
 
   port := on-device ? 80 : HOST-PORT
-  server := http.Server
+  server := http.Server --max-tasks=2
   print "Listening on http://localhost:$port/"
 
   server.listen network port:: | request writer |
