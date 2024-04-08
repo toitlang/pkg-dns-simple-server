@@ -1,5 +1,5 @@
 name: dns-simple-server
-description: A simple DNS name server. An example uses this to build a simple captive portal.
+description: A simple DNS name server. An example uses this to build a simple captive
+  portal.
 environment:
-  # A new enough version to understand kebab-case names.
   sdk: ^2.0.0-alpha.95
