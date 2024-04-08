@@ -2,7 +2,6 @@
 // Use of this source code is governed by an MIT-style license that can be
 // found in the LICENSE file.
 
-import io show BIG-ENDIAN
 import io
 import net
 import net.modules.dns
@@ -184,10 +183,10 @@ class ResponseBuilder_:
       resource-records_++
 
   get -> ByteArray:
-    result := packet.bytes
-    BIG-ENDIAN.put-int16 result QUERY-COUNT-OFFSET_ resource-records_
-    BIG-ENDIAN.put-int16 result ANSWER-COUNT-OFFSET_ resource-records_
-    return result
+    packet-be := packet.big-endian
+    packet-be.put-int16 --at=QUERY-COUNT-OFFSET_ resource-records_
+    packet-be.put-int16 --at=ANSWER-COUNT-OFFSET_ resource-records_
+    return packet.bytes
 
   create-error_ error-code/int -> ByteArray:
     result := get
