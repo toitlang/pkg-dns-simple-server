@@ -3,6 +3,7 @@
 // be found in the tests/TESTS_LICENSE file.
 
 import expect show *
+import io
 import net.modules.dns
 import net
 
@@ -25,8 +26,9 @@ expect-lookup-failure reply/ByteArray name/string id/int -> none:
   expect-equals dns.ERROR-NAME reply[3] & 0xf
 
   // Server should echo back the domain that was looked up.
-  expect-equals name
-      dns.decode-name reply 12: null
+  reader := io.Reader reply
+  reader.skip 12  // Skip the header.
+  expect-equals name (dns.decode-name reader reply)
 
 expect-lookup-success reply/ByteArray name/string id/int address/net.IpAddress -> none:
   // Server should echo back the query ID.
@@ -39,8 +41,9 @@ expect-lookup-success reply/ByteArray name/string id/int address/net.IpAddress -
   expect-equals dns.ERROR-NONE reply[3] & 0xf
 
   // Server should echo back the domain that was looked up.
-  expect-equals name
-      dns.decode-name reply 12: null
+  reader := io.Reader reply
+  reader.skip 12  // Skip the header.
+  expect-equals name (dns.decode-name reader reply)
 
   // Packet ends with the IP address.
   expect-equals address.raw reply[reply.size - 4..]
